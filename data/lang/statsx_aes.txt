@@ -75,9 +75,10 @@ AES_KS = K:D
 AES_HSK = HS:K
 AES_HSP = HS
 AES_TIME = Время в игре
-AES_RANK = %s (%.2f)
+AES_RANK = %s (%.0f)
 
 HTML_SKILL_FMT = <div id="%s">%.0f</div>
+AES_STATS_INFO1 = Нет соединения с БД.
 
 [en]
 MENU_TAG = \r[\ySTATS\r]\w
@@ -155,6 +156,7 @@ AES_KS = K:D
 AES_HSK = HS:K
 AES_HSP = HS
 AES_TIME = Online time
-AES_RANK = %s (%.2f)
+AES_RANK = %s (%.0f)
 
 HTML_SKILL_FMT = <div id="%s">%.0f</div>
+AES_STATS_INFO1 = Stats database is offline.
