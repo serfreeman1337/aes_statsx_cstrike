@@ -236,7 +236,7 @@ public SeStats_Load(id)
 	sestats_data[0] = id
 	
 	// пробуем загрузить статистику по картам
-	if(!get_sestats_thread_sql(player_id,"SeStats_LoadCompleted",sestats_data,sizeof sestats_data))
+	if(!get_sestats_thread_sql(player_id,"SeStats_LoadCompleted",sestats_data,sizeof sestats_data,15))
 	{
 		// статистика по картам выключена, просто запоминаем начальный скилл
 		get_user_skill(id,player_csxsql[id][CSXSQL_INITAL_SKILL])
@@ -550,7 +550,7 @@ public RankStatsSay(id,player_id){
 	
 	#if defined CSSTATSX_SQL
 		new stats3[STATS3_END]
-		get_user_stats3_sql(id,stats3)
+		get_user_stats3_sql(player_id,stats3)
 	#endif
 	
 	theBuffer[0] = 0
@@ -639,8 +639,8 @@ public RankStatsSay(id,player_id){
 		name,rank,stats_num
 	)
 	
-	len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=q><td>%L<td>%d (%L %d)",id,"HTML_KILLS",stats[STATS_KILLS],id,"HTML_HS",stats[STATS_HS])
-	len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=b><td>%L<td>%d",id,"HTML_DEATHS",stats[STATS_DEATHS])
+	len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=q><td>%L<td>%d (%L %d (%.2f%%))",id,"HTML_KILLS",stats[STATS_KILLS],id,"HTML_HS",stats[STATS_HS],effec_hs(stats))
+	len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=b><td>%L<td>%d (%L %.2f)",id,"HTML_DEATHS",stats[STATS_DEATHS],id,"HTML_KS",kd_ratio(stats))
 	len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=q><td>%L<td>%d",id,"HTML_HITS",stats[STATS_HITS])
 	len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=b><td>%L<td>%d",id,"HTML_SHOTS",stats[STATS_SHOTS])
 	len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=q><td>%L<td>%d",id,"HTML_DMG",stats[STATS_DAMAGE])
@@ -660,7 +660,8 @@ public RankStatsSay(id,player_id){
 		
 		len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=b><td>%L<td>%d",id,"CSXSQL_JOINS",stats3[STATS3_CONNECT])
 		
-		new from = get_systime() - get_user_lastjoin_sql(id)
+		/*
+		new from = get_systime() - get_user_lastjoin_sql(player_id)
 		new from_str[40]
 		get_time_length(id,from,timeunit_seconds,from_str,charsmax(from_str))
 		
@@ -669,6 +670,7 @@ public RankStatsSay(id,player_id){
 			from_str,
 			id,"AGO"
 		)
+		*/
 		
 		len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=q><td>%L<td>%d (%L, %L)",id,"CSXSQL_ROUNDS",
 			(stats3[STATS3_ROUNDT] + stats3[STATS3_ROUNDCT]),
@@ -682,7 +684,7 @@ public RankStatsSay(id,player_id){
 			id,"CSXSQL_AS_CT",stats3[STATS3_WINCT]
 		)
 		
-		new firstjoin = get_user_firstjoin_sql(id)
+		new firstjoin = get_user_firstjoin_sql(player_id)
 		
 		len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=q><td>%L<td>",id,"CSXSQL_FIRSTJOIN")
 		
@@ -795,7 +797,7 @@ public RankStatsSay(id,player_id){
 			
 			ArraySort(wpn_stats_array,"Sort_WeaponStats")
 			
-			for(new i,wpnId,wpnName[MAX_NAME_LENGTH],length = ArraySize(wpn_stats_array) ; i < length ; i++)
+			for(new lena,i,wpnId,wpnName[MAX_NAME_LENGTH],length = ArraySize(wpn_stats_array) ; i < length && charsmax(theBuffer)-len > 0; i++)
 			{
 				ArrayGetArray(wpn_stats_array,i,wpn_stats)
 				
@@ -810,6 +812,8 @@ public RankStatsSay(id,player_id){
 				stats[7] = wpn_stats[7]
 				
 				xmod_get_wpnname(wpnId,wpnName,charsmax(wpnName))
+				
+				lena = len
 					
 				len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=%s><td>%s<td>%d<td>%d<td>%d<td>%d<td>%d<td>%0.1f%%",
 					odd ? "b" : "q",
@@ -821,6 +825,15 @@ public RankStatsSay(id,player_id){
 					stats[STATS_DAMAGE],
 					accuracy(stats)
 				)
+				
+				// LENA FIX
+				if(len >= BUFF_LEN)
+				{
+					len = lena
+					theBuffer[len] = 0
+					
+					break
+				}
 						
 				odd ^= true
 			}
