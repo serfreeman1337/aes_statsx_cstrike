@@ -13,7 +13,7 @@ STATS_SKILL = Скилл
 STATS_RANK = Звание
 STATS_EXP = Опыт
 HTML_META = <meta charset=UTF-8>
-HTML_STYLE = <link href="http://1337.uz/aes/aes2.css" rel=stylesheet type=text/css>
+HTML_STYLE = <link href="aes2.css" rel=stylesheet type=text/css>
 HTML_HEADER_ROW = <tr>%s</tr>
 HTML_HEADER_CELL = <th%s>%L
 HTML_BODY_ROW = <tr%s>%s</tr>
@@ -79,6 +79,22 @@ AES_RANK = %s (%.0f)
 
 HTML_SKILL_FMT = <div id="%s">%.0f</div>
 AES_STATS_INFO1 = Нет соединения с БД.
+AES_STATS_INFO2 = Статистика на данный момент недоступна.
+
+AES_STATS_DESC1 = %dд %02d:%02dч
+AES_STATS_DESC2 = %02d:%02dч
+AES_STATS_DESC3 = %02dм
+AES_STATS_DESC4 = %02dс
+
+CSXSQL_JOINS = Подключений
+CSXSQL_ROUNDS = Раундов сыграно
+CSXSQL_WINS = Раундов выйграно
+CSXSQL_AS_T = %d за террористов
+CSXSQL_AS_CT = %d за спецназ
+CSXSQL_FIRSTJOIN = Играет с
+
+LAST = посл
+AGO = назад
 
 [en]
 MENU_TAG = \r[\ySTATS\r]\w

@@ -17,10 +17,12 @@
 	
 	#define MAX_PLAYERS 32
 	#define MAX_NAME_LENGTH 32
+	
+	#define client_disconnected client_disconnect
 #endif
 
-//#define AES			// расскомментируйте для поддержки AES (http://1337.uz/advanced-experience-system/)
-//#define CSSTATSX_SQL		// расскомментируйте для поддержки CSstatsX SQL (http://1337.uz/csstatsx-sql/)
+//#define AES			// СЂР°СЃСЃРєРѕРјРјРµРЅС‚РёСЂСѓР№С‚Рµ РґР»СЏ РїРѕРґРґРµСЂР¶РєРё AES (http://1337.uz/advanced-experience-system/)
+#define CSSTATSX_SQL		// СЂР°СЃСЃРєРѕРјРјРµРЅС‚РёСЂСѓР№С‚Рµ РґР»СЏ РїРѕРґРґРµСЂР¶РєРё CSstatsX SQL (http://1337.uz/csstatsx-sql/)
 
 #if defined AES
 	#include <aes_v>
@@ -30,6 +32,7 @@
 
 #if defined CSSTATSX_SQL
 	#include <csstatsx_sql>
+	#include <time>
 #endif
 
 #define PLUGIN "AES: StatsX"
@@ -129,44 +132,48 @@ public plugin_init(){
 	register_clcmd("say_team","Say_Catch")
 	
 	/*
-	// Отображение /top15 и /rank
-	// ВАЖНО! Motd окно не может показывать больше 1534-х символов, а сообщение в чат больше 192-х.
-	// Если что то отображается криво или не полностью, то нужно уменьшить количество пунктов. (Топ не показывает больше 10-ти игроков)
-	//   * - Ранг
-	//   a - Ник (Only /top15)
-	//   b - Убийста
-	//   c - Смерти
-	//   d - Попаданий
-	//   e - Выстрелов
-	//   f - В голову
-	//   g - Точность
-	//   h - Эффективность
-	//   i - Скилл
-	//   j - Звание Army Ranks
+	// РћС‚РѕР±СЂР°Р¶РµРЅРёРµ /top15 Рё /rank
+	// Р’РђР–РќРћ! Motd РѕРєРЅРѕ РЅРµ РјРѕР¶РµС‚ РїРѕРєР°Р·С‹РІР°С‚СЊ Р±РѕР»СЊС€Рµ 1534-С… СЃРёРјРІРѕР»РѕРІ, Р° СЃРѕРѕР±С‰РµРЅРёРµ РІ С‡Р°С‚ Р±РѕР»СЊС€Рµ 192-С….
+	// Р•СЃР»Рё С‡С‚Рѕ С‚Рѕ РѕС‚РѕР±СЂР°Р¶Р°РµС‚СЃСЏ РєСЂРёРІРѕ РёР»Рё РЅРµ РїРѕР»РЅРѕСЃС‚СЊСЋ, С‚Рѕ РЅСѓР¶РЅРѕ СѓРјРµРЅСЊС€РёС‚СЊ РєРѕР»РёС‡РµСЃС‚РІРѕ РїСѓРЅРєС‚РѕРІ. (РўРѕРї РЅРµ РїРѕРєР°Р·С‹РІР°РµС‚ Р±РѕР»СЊС€Рµ 10-С‚Рё РёРіСЂРѕРєРѕРІ)
+	//   * - Р Р°РЅРі
+	//   a - РќРёРє (Only /top15)
+	//   b - РЈР±РёР№СЃС‚Р°
+	//   c - РЎРјРµСЂС‚Рё
+	//   d - РџРѕРїР°РґР°РЅРёР№
+	//   e - Р’С‹СЃС‚СЂРµР»РѕРІ
+	//   f - Р’ РіРѕР»РѕРІСѓ
+	//   g - РўРѕС‡РЅРѕСЃС‚СЊ
+	//   h - Р­С„С„РµРєС‚РёРІРЅРѕСЃС‚СЊ
+	//   i - РЎРєРёР»Р»
+	//   j - Р—РІР°РЅРёРµ Army Ranks
 	//   k - K:D
 	//   l - HS:K
 	//   m - HS %
-	//   n - онлайн время
+	//   n - РѕРЅР»Р°Р№РЅ РІСЂРµРјСЏ
 	*/
 	
 	cvar[CVAR_MOTD_DESC] = register_cvar("aes_statsx_top","*abcfi")
 	cvar[CVAR_CHAT_DESC] = register_cvar("aes_statsx_rank","bci")
 	
-	// Настройка скилла. Значения схожи со значениями эффективности.
-	// Значения: L- L L+ M- M M+ H- H H+ P- P P+ G
+	// РќР°СЃС‚СЂРѕР№РєР° СЃРєРёР»Р»Р°. Р—РЅР°С‡РµРЅРёСЏ СЃС…РѕР¶Рё СЃРѕ Р·РЅР°С‡РµРЅРёСЏРјРё СЌС„С„РµРєС‚РёРІРЅРѕСЃС‚Рё.
+	// Р—РЅР°С‡РµРЅРёСЏ: L- L L+ M- M M+ H- H H+ P- P P+ G
 	cvar[CVAR_SKILL] = register_cvar("aes_statsx_skill","60.0 75.0 85.0 100.0 115.0 130.0 140.0 150.0 165.0 180.0 195.0 210.0")
 	
 	/*
-	* Как выводить скилл в motd
-	*	0 - html (картинка с буквой + скилл)
-	*	1 - буква (скилл)
-	*	2 - буква
-	*	3 - скилл
+	* РљР°Рє РІС‹РІРѕРґРёС‚СЊ СЃРєРёР»Р» РІ motd
+	*	0 - html (РєР°СЂС‚РёРЅРєР° СЃ Р±СѓРєРІРѕР№ + СЃРєРёР»Р»)
+	*	1 - Р±СѓРєРІР° (СЃРєРёР»Р»)
+	*	2 - Р±СѓРєРІР°
+	*	3 - СЃРєРёР»Р»
 	*/
 	cvar[CVAR_MOTD_SKILL_FMT] = register_cvar("aes_statsx_motd_skill","0")
 	
 	register_dictionary("statsx.txt")
 	register_dictionary("statsx_aes.txt")
+	
+	#if defined CSSTATSX_SQL
+	register_dictionary("time.txt")
+	#endif
 	
 	register_menucmd(register_menuid("Stats Menu"), 1023, "actionStatsMenu")
 }
@@ -175,7 +182,7 @@ public plugin_cfg(){
 	new levelString[512],stPos,ePos,rawPoint[20],cnt
 	get_pcvar_string(cvar[CVAR_SKILL],levelString,charsmax(levelString))
 	
-	// парсер значений для скилла
+	// РїР°СЂСЃРµСЂ Р·РЅР°С‡РµРЅРёР№ РґР»СЏ СЃРєРёР»Р»Р°
 	do {
 		ePos = strfind(levelString[stPos]," ")
 		
@@ -192,7 +199,81 @@ public plugin_cfg(){
 	} while (ePos != -1)
 }
 
-// Ловим сообщения чата
+#if defined CSSTATSX_SQL
+enum _:player_csxsql_struct
+{
+	CSXSQL_SESTATS:CSXSQL_PLAYER_SESTATS,
+	Float:CSXSQL_INITAL_SKILL
+}
+
+new player_csxsql[MAX_PLAYERS + 1][player_csxsql_struct]
+
+public client_putinserver(id)
+{
+	SeStats_Load(id)
+}
+
+//
+// Р—Р°РіСЂСѓР¶Р°РµРј СЃС‚Р°С‚РёСЃС‚РёРєСѓ РїРѕ РєР°СЂС‚Р°Рј
+//
+public SeStats_Load(id)
+{
+	if(!is_user_connected(id))
+	{
+		return PLUGIN_CONTINUE
+	}
+	
+	new player_id = get_user_stats_id(id)
+	
+	// СЃС‚Р°С‚РёСЃС‚РёРєР° РёРіСЂРѕРєР° РµС‰Рµ РЅРµ Р·Р°РіСЂСѓР·РёР»Р°СЃСЊ РІ CSstatsX SQL, РїСЂРѕР±СѓРµРј РµС‰Рµ СЂР°Р· С‡РµСЂРµР· СЃРµРєСѓРЅРґСѓ
+	if(!player_id)
+	{
+		set_task(1.0,"SeStats_Load",id)
+		return PLUGIN_CONTINUE
+	}
+	
+	new sestats_data[1]
+	sestats_data[0] = id
+	
+	// РїСЂРѕР±СѓРµРј Р·Р°РіСЂСѓР·РёС‚СЊ СЃС‚Р°С‚РёСЃС‚РёРєСѓ РїРѕ РєР°СЂС‚Р°Рј
+	if(!get_sestats_thread_sql(player_id,"SeStats_LoadCompleted",sestats_data,sizeof sestats_data))
+	{
+		// СЃС‚Р°С‚РёСЃС‚РёРєР° РїРѕ РєР°СЂС‚Р°Рј РІС‹РєР»СЋС‡РµРЅР°, РїСЂРѕСЃС‚Рѕ Р·Р°РїРѕРјРёРЅР°РµРј РЅР°С‡Р°Р»СЊРЅС‹Р№ СЃРєРёР»Р»
+		get_user_skill(id,player_csxsql[id][CSXSQL_INITAL_SKILL])
+	}
+	
+	return PLUGIN_CONTINUE
+}
+
+public SeStats_LoadCompleted(CSXSQL_SESTATS:sestats_array,data[],dataSize)
+{
+	new id = data[0]
+	
+	if(!is_user_connected(id))
+	{
+		get_sestats_free(sestats_array)
+		
+		return PLUGIN_CONTINUE
+	}
+	
+	player_csxsql[id][CSXSQL_PLAYER_SESTATS] = _:sestats_array
+	get_user_skill(id,player_csxsql[id][CSXSQL_INITAL_SKILL])
+	
+	return PLUGIN_CONTINUE
+}
+
+public client_disconnected(id)
+{
+	if(player_csxsql[id][CSXSQL_PLAYER_SESTATS])
+	{
+		get_sestats_free(player_csxsql[id][CSXSQL_PLAYER_SESTATS])
+	}
+	
+	arrayset(player_csxsql[id],0,player_csxsql_struct)
+}
+#endif
+
+// Р›РѕРІРёРј СЃРѕРѕР±С‰РµРЅРёСЏ С‡Р°С‚Р°
 public Say_Catch(id){
 	new msg[191]
 	read_args(msg,190)
@@ -233,10 +314,10 @@ public Say_Catch(id){
 }
 
 //
-// Команда /rank
+// РљРѕРјР°РЅРґР° /rank
 //
 public RankSay(id){
-	// команда /rank выключена
+	// РєРѕРјР°РЅРґР° /rank РІС‹РєР»СЋС‡РµРЅР°
 	if(!SayRank)
 	{
 		client_print_color(id,print_team_red,"%L %L",id,"STATS_TAG", id,"DISABLED_MSG")
@@ -256,8 +337,15 @@ public RankSay(id){
 		stats_num = get_statsnum()
 	#endif
 	
-	len += formatex(message[len],charsmax(message) - len,"%L ",id,"AES_YOUR_RANK_IS",rank,stats_num)
-	len += parse_rank_desc(id,message[len],charsmax(message)-len,stats)
+	if(rank > 0)
+	{
+		len += formatex(message[len],charsmax(message) - len,"%L ",id,"AES_YOUR_RANK_IS",rank,stats_num)
+		len += parse_rank_desc(id,message[len],charsmax(message)-len,stats)
+	}
+	else
+	{
+		len += formatex(message[len],charsmax(message) - len,"%L ",id,"AES_STATS_INFO2")
+	}
 	
 	client_print_color(id,print_team_default,message)
 	
@@ -265,7 +353,7 @@ public RankSay(id){
 }
 
 //
-// Формирование сообщения /rank
+// Р¤РѕСЂРјРёСЂРѕРІР°РЅРёРµ СЃРѕРѕР±С‰РµРЅРёСЏ /rank
 //
 parse_rank_desc(id,msg[],maxlen,stats[8]){
 	new cnt,theChar[4],len
@@ -273,52 +361,52 @@ parse_rank_desc(id,msg[],maxlen,stats[8]){
 	new desc_str[10]
 	get_pcvar_string(cvar[CVAR_CHAT_DESC],desc_str,charsmax(desc_str))
 	
-	// Проверяем всё флаги
+	// РџСЂРѕРІРµСЂСЏРµРј РІСЃС‘ С„Р»Р°РіРё
 	for(new i,length = strlen(desc_str) ; i < length ; ++i){
-		theChar[0] = desc_str[i]	// фз почему напрямую не рабатает
+		theChar[0] = desc_str[i]	// С„Р· РїРѕС‡РµРјСѓ РЅР°РїСЂСЏРјСѓСЋ РЅРµ СЂР°Р±Р°С‚Р°РµС‚
 		
-		// если это первое значение, то рисуем в начале скобку, иначе запятую с пробелом
+		// РµСЃР»Рё СЌС‚Рѕ РїРµСЂРІРѕРµ Р·РЅР°С‡РµРЅРёРµ, С‚Рѕ СЂРёСЃСѓРµРј РІ РЅР°С‡Р°Р»Рµ СЃРєРѕР±РєСѓ, РёРЅР°С‡Рµ Р·Р°РїСЏС‚СѓСЋ СЃ РїСЂРѕР±РµР»РѕРј
 		if(cnt != length)
 			len += formatex(msg[len],maxlen - len,cnt <= 0 ? "(" : ", ")
 		
-		// добавляем в сообщение информацию в соотв. с флагами
+		// РґРѕР±Р°РІР»СЏРµРј РІ СЃРѕРѕР±С‰РµРЅРёРµ РёРЅС„РѕСЂРјР°С†РёСЋ РІ СЃРѕРѕС‚РІ. СЃ С„Р»Р°РіР°РјРё
 		switch(theChar[0]){
-			 // убийства
+			 // СѓР±РёР№СЃС‚РІР°
 			case 'b':
 			{
 				len += formatex(msg[len],maxlen - len,"%L ^3%d^1",id,"KILLS",stats[0])
 			}
-			 // смерти
+			 // СЃРјРµСЂС‚Рё
 			case 'c':
 			{
 				len += formatex(msg[len],maxlen - len,"%L ^3%d^1",id,"DEATHS",stats[1])
 			}
-			 // попадания
+			 // РїРѕРїР°РґР°РЅРёСЏ
 			case 'd':
 			{
 				len += formatex(msg[len],maxlen - len,"%L ^3%d^1",id,"HITS",stats[5])
 			}
-			// выстрелы
+			// РІС‹СЃС‚СЂРµР»С‹
 			case 'e':
 			{ 
 				len += formatex(msg[len],maxlen - len,"%L ^3%d^1",id,"SHOTS",stats[4])
 			}
-			// хедшоты
+			// С…РµРґС€РѕС‚С‹
 			case 'f':
 			{
 				len += formatex(msg[len],maxlen - len,"%L ^3%d^1",id,"STATS_HS",stats[2])
 			}
-			// точность
+			// С‚РѕС‡РЅРѕСЃС‚СЊ
 			case 'g':
 			{
 				len += formatex(msg[len],maxlen - len,"%L ^3%.2f%%^1",id,"ACC",accuracy(stats))
 			}
-			// эффективность
+			// СЌС„С„РµРєС‚РёРІРЅРѕСЃС‚СЊ
 			case 'h':
 			{ 
 				len += formatex(msg[len],maxlen - len,"%L ^3%d%%^1",id,"EFF",effec(stats))
 			}
-			// скилл
+			// СЃРєРёР»Р»
 			case 'i':
 			{
 				new Float:skill,skill_id
@@ -338,10 +426,10 @@ parse_rank_desc(id,msg[],maxlen,stats[8]){
 				
 			}
 			#if defined AES
-			case 'j':{ // ранг и опыт
+			case 'j':{ // СЂР°РЅРі Рё РѕРїС‹С‚
 				new Float:player_exp = aes_get_player_exp(id)
 				
-				if(player_exp == -1.0)// без ранга
+				if(player_exp == -1.0)// Р±РµР· СЂР°РЅРіР°
 				{
 					len += formatex(msg[len],maxlen - len,"%L ^4---^1",id,"STATS_RANK")
 				}
@@ -381,17 +469,24 @@ parse_rank_desc(id,msg[],maxlen,stats[8]){
 					effec_hs(stats)
 				)
 			}
-			// время в игре
+			#if defined CSSTATSX_SQL
+			// РІСЂРµРјСЏ РІ РёРіСЂРµ
 			case 'n':
 			{
+				new ot = get_user_gametime(id)
+				
+				len += formatex(msg[len],maxlen - len,"%L: ^3",id,"AES_TIME")
+				len += func_format_ot(ot,msg[len],maxlen - len,id)
+				len += formatex(msg[len],maxlen - len,"^1")
 			}
+			#endif
 		}
 		
 		theChar[0] = 0
 		cnt ++
 	}
 	
-	// завершаем всё сообщение скобкой, если была подстановка параметров
+	// Р·Р°РІРµСЂС€Р°РµРј РІСЃС‘ СЃРѕРѕР±С‰РµРЅРёРµ СЃРєРѕР±РєРѕР№, РµСЃР»Рё Р±С‹Р»Р° РїРѕРґСЃС‚Р°РЅРѕРІРєР° РїР°СЂР°РјРµС‚СЂРѕРІ
 	if(cnt)
 	{
 		len += formatex(msg[len],maxlen - len,")")
@@ -400,13 +495,42 @@ parse_rank_desc(id,msg[],maxlen,stats[8]){
 	return len
 }
 
+#if defined CSSTATSX_SQL
+func_format_ot(ot,string[],len,idLang = LANG_SERVER)
+{
+	new d,h,m,s
+	
+	d = (ot / SECONDS_IN_DAY)
+	ot -= (d * SECONDS_IN_DAY)
+	h = (ot / SECONDS_IN_HOUR)
+	ot -= (h * SECONDS_IN_HOUR)
+	m = (ot / SECONDS_IN_MINUTE)
+	ot -= (m * SECONDS_IN_MINUTE)
+	s = ot
+	
+	if(d)
+	{
+		return formatex(string,len,"%L",idLang,"AES_STATS_DESC1",d,h,m)
+	}
+	else if(h)
+	{
+		return formatex(string,len,"%L",idLang,"AES_STATS_DESC2",h,m)
+	}
+	else if(m)
+	{
+		return formatex(string,len,"%L",idLang,"AES_STATS_DESC3",m)
+	}
+		
+	return formatex(string,len,"%L",idLang,"AES_STATS_DESC4",s)
+}
+#endif
 //
-// Формирование окна /rankstats
-// 	id - кому показывать
-// 	player_id - кого показывать
+// Р¤РѕСЂРјРёСЂРѕРІР°РЅРёРµ РѕРєРЅР° /rankstats
+// 	id - РєРѕРјСѓ РїРѕРєР°Р·С‹РІР°С‚СЊ
+// 	player_id - РєРѕРіРѕ РїРѕРєР°Р·С‹РІР°С‚СЊ
 //
 public RankStatsSay(id,player_id){
-	// Команда /rankstats выключена
+	// РљРѕРјР°РЅРґР° /rankstats РІС‹РєР»СЋС‡РµРЅР°
 	if(!SayRankStats)
 	{
 		client_print_color(id,print_team_default,"%L %L",id,"STATS_TAG", id,"DISABLED_MSG")
@@ -414,8 +538,20 @@ public RankStatsSay(id,player_id){
 		return PLUGIN_HANDLED
 	}
 	
+	if(!is_user_connected(player_id))
+	{
+		client_print_color(id,print_team_default,"%L %L",id,"STATS_TAG",id,"AES_STATS_INFO2")
+		
+		return PLUGIN_HANDLED
+	}
+	
 	new len,motd_title[MAX_NAME_LENGTH]
 	new name[MAX_NAME_LENGTH],rank,stats[8],bh[8],stats_num,Float:skill,skill_id,skill_str[64]
+	
+	#if defined CSSTATSX_SQL
+		new stats3[STATS3_END]
+		get_user_stats3_sql(id,stats3)
+	#endif
 	
 	theBuffer[0] = 0
 	
@@ -459,7 +595,7 @@ public RankStatsSay(id,player_id){
 				skill
 			)
 		}
-		// буква (скилл)
+		// Р±СѓРєРІР° (СЃРєРёР»Р»)
 		case 1:
 		{
 			formatex(skill_str,charsmax(skill_str),"%s (%.2f)",
@@ -467,14 +603,14 @@ public RankStatsSay(id,player_id){
 				skill
 			)
 		}
-		// буква
+		// Р±СѓРєРІР°
 		case 2:
 		{
 			formatex(skill_str,charsmax(skill_str),"%s",
 				g_skill_letters[skill_id]
 			)
 		}
-		// скилл
+		// СЃРєРёР»Р»
 		case 3:
 		{
 			formatex(skill_str,charsmax(skill_str),"%.2f",
@@ -485,10 +621,18 @@ public RankStatsSay(id,player_id){
 	
 	len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<table cellspacing=10 cellpadding=0><tr>")
 	
+	new bool:is_wstats = false
+	
+	#if defined CSSTATSX_SQL
+		is_wstats = (get_user_wstats_sql(player_id,0,stats,bh) == -1) ? false : true
+	#endif
+	
 	//
-	// Общая статистика
+	// РћР±С‰Р°СЏ СЃС‚Р°С‚РёСЃС‚РёРєР°
 	//
-	len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<td valign=top width=50%% class=q><table cellspacing=0><tr><th colspan=2>")
+	len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<td valign=top width=%d%% class=q><table cellspacing=0><tr><th colspan=2>",
+		is_wstats ? 40 : 50
+	)
 	
 	len += formatex(theBuffer[len],charsmax(theBuffer)-len,"%L",
 		id,"HTML_RANKSTATS_TSTATS",
@@ -503,49 +647,221 @@ public RankStatsSay(id,player_id){
 	len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=b><td>%L<td>%.2f%%",id,"HTML_ACC",accuracy(stats))
 	len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=q><td>%L<td>%.2f%%",id,"HTML_EFF",effec(stats))
 	len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=b><td>%L<td>%s",id,"HTML_SKILL",skill_str)
-	len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=q><td height=18px><td>")
 	
+	#if !defined CSSTATSX_SQL
+		len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=q><td height=18px><td>")
+	#else
+		len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=q><td>%L<td>",id,"HTML_TIME")
+		len += func_format_ot(
+			get_user_gametime(player_id),
+			theBuffer[len],charsmax(theBuffer)-len,
+			id
+		)
+		
+		len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=b><td>%L<td>%d",id,"CSXSQL_JOINS",stats3[STATS3_CONNECT])
+		
+		new from = get_systime() - get_user_lastjoin_sql(id)
+		new from_str[40]
+		get_time_length(id,from,timeunit_seconds,from_str,charsmax(from_str))
+		
+		len += formatex(theBuffer[len],charsmax(theBuffer)-len," (%L. %s %L)",
+			id,"LAST",
+			from_str,
+			id,"AGO"
+		)
+		
+		len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=q><td>%L<td>%d (%L, %L)",id,"CSXSQL_ROUNDS",
+			(stats3[STATS3_ROUNDT] + stats3[STATS3_ROUNDCT]),
+			id,"CSXSQL_AS_T",stats3[STATS3_ROUNDT],
+			id,"CSXSQL_AS_CT",stats3[STATS3_ROUNDCT]
+		)
+		
+		len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=b><td>%L<td>%d (%L, %L)",id,"CSXSQL_WINS",
+			(stats3[STATS3_WINT] + stats3[STATS3_WINCT]),
+			id,"CSXSQL_AS_T",stats3[STATS3_WINT],
+			id,"CSXSQL_AS_CT",stats3[STATS3_WINCT]
+		)
+		
+		new firstjoin = get_user_firstjoin_sql(id)
+		
+		len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=q><td>%L<td>",id,"CSXSQL_FIRSTJOIN")
+		
+		if(firstjoin > 0)
+		{
+			len += format_time(theBuffer[len],charsmax(theBuffer)-len,"%m/%d/%Y - %H:%M:%S",firstjoin)
+		}
+		else
+		{
+			len += formatex(theBuffer[len],charsmax(theBuffer)-len,"-")
+		}
+	#endif
 	len += formatex(theBuffer[len],charsmax(theBuffer)-len,"</td></tr></table></td>")
 	
-	//
-	// Статистика по попаданиям
-	//
-	len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<td valign=top width=50%% class=q><table cellspacing=0><tr><th colspan=2>")
-	
-	len += formatex(theBuffer[len],charsmax(theBuffer)-len,"%L",id,"HTML_RANKSTATS_THITS")
-		
-	new theSwitcher
-		
-	for (new i = 1; i < 8; i++)
-	{
-		len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=%s><td>%L<td>%d",
-			theSwitcher ? "b" : "q",
-			id,BODY_PART[i],bh[i]
-		)
+	#if !defined CSSTATSX_SQL
+		//
+		// РЎС‚Р°С‚РёСЃС‚РёРєР° РїРѕ РїРѕРїР°РґР°РЅРёСЏРј
+		//
+		len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<td valign=top width=50%% class=q><table cellspacing=0><tr><th colspan=2>")
+		len += formatex(theBuffer[len],charsmax(theBuffer)-len,"%L",id,"HTML_RANKSTATS_THITS")
 			
-		theSwitcher = theSwitcher ? false : true
-	}
-	
-	// mne tak nadoel etot kod :(
-	for(new i = 0 ; i < 2; ++i){
-		len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=%s><td height=18px><td>",theSwitcher ? "b" : "q")
+		new theSwitcher
 			
-		theSwitcher = theSwitcher ? false : true
-	}
+		for (new i = 1; i < 8; i++)
+		{
+			len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=%s><td>%L<td>%d",
+				theSwitcher ? "b" : "q",
+				id,BODY_PART[i],bh[i]
+			)
+				
+			theSwitcher = theSwitcher ? false : true
+		}
+		
+		
+		// mne tak nadoel etot kod :(
+		for(new i = 0 ; i < 2; ++i){
+			len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=%s><td height=18px><td>",theSwitcher ? "b" : "q")
+				
+			theSwitcher = theSwitcher ? false : true
+		}
+		
+		len += formatex(theBuffer[len],charsmax(theBuffer)-len,"</td>")
+	#else
+		// СЃС‚Р°С‚РёСЃС‚РёРєР° РїРѕ РѕСЂСѓР¶РёСЋ РІС‹РєР»СЋС‡РµРЅР°
+		if(!is_wstats)
+		{
+			//
+			// РЎС‚Р°С‚РёСЃС‚РёРєР° РїРѕ РїРѕРїР°РґР°РЅРёСЏРј
+			//
+			len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<td valign=top width=50%% class=q><table cellspacing=0><tr><th colspan=2>")
+			len += formatex(theBuffer[len],charsmax(theBuffer)-len,"%L",id,"HTML_RANKSTATS_THITS")
+				
+			new theSwitcher
+				
+			for (new i = 1; i < 8; i++)
+			{
+				len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=%s><td>%L<td>%d",
+					theSwitcher ? "b" : "q",
+					id,BODY_PART[i],bh[i]
+				)
+					
+				theSwitcher = theSwitcher ? false : true
+			}
+			
+			
+			// mne tak nadoel etot kod :(
+			for(new i = 0 ; i < 5; ++i){
+				len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=%s><td height=18px><td>",theSwitcher ? "b" : "q")
+					
+				theSwitcher = theSwitcher ? false : true
+			}
+			
+			len += formatex(theBuffer[len],charsmax(theBuffer)-len,"</td>")
+		}
+		else
+		{
+			//
+			// РЎС‚Р°С‚РёСЃС‚РёРєР° РїРѕ РёСЃРїРѕР»СЊР·СѓРµРјРѕРјСѓ РѕСЂСѓР¶РёСЋ
+			//
+			len += formatex(theBuffer[len],BUFF_LEN-len,"<td valign=top width=60%% class=q><table cellspacing=0 width=100%%><tr><th>%L<th>%L<th>%L<th>%L<th>%L<th>%L<th>%L",
+				id,"HTML_WEAPON",
+				id,"HTML_KILLS",
+				id,"HTML_DEATHS",
+				id,"HTML_HITS",
+				id,"HTML_SHOTS",
+				id,"HTML_DMG",
+				id,"HTML_ACC"
+			)
+				
+			new bool:odd
+			new wpn_stats[9],Array:wpn_stats_array = ArrayCreate(sizeof wpn_stats)
+				
+			for (new wpnId = 1 ; wpnId < xmod_get_maxweapons() && charsmax(theBuffer)-len > 0 ; wpnId++)
+			{
+				if (get_user_wstats_sql(player_id, wpnId, stats,bh))
+				{
+					wpn_stats[0] = stats[0]
+					wpn_stats[1] = stats[1]
+					wpn_stats[2] = stats[2]
+					wpn_stats[3] = stats[3]
+					wpn_stats[4] = stats[4]
+					wpn_stats[5] = stats[5]
+					wpn_stats[6] = stats[6]
+					wpn_stats[7] = stats[7]
+					wpn_stats[8] = wpnId
+					
+					ArrayPushArray(wpn_stats_array,wpn_stats)
+				}
+			}
+			
+			ArraySort(wpn_stats_array,"Sort_WeaponStats")
+			
+			for(new i,wpnId,wpnName[MAX_NAME_LENGTH],length = ArraySize(wpn_stats_array) ; i < length ; i++)
+			{
+				ArrayGetArray(wpn_stats_array,i,wpn_stats)
+				
+				wpnId = wpn_stats[8]
+				stats[0] = wpn_stats[0]
+				stats[1] = wpn_stats[1]
+				stats[2] = wpn_stats[2]
+				stats[3] = wpn_stats[3]
+				stats[4] = wpn_stats[4]
+				stats[5] = wpn_stats[5]
+				stats[6] = wpn_stats[6]
+				stats[7] = wpn_stats[7]
+				
+				xmod_get_wpnname(wpnId,wpnName,charsmax(wpnName))
+					
+				len += formatex(theBuffer[len],charsmax(theBuffer)-len,"<tr id=%s><td>%s<td>%d<td>%d<td>%d<td>%d<td>%d<td>%0.1f%%",
+					odd ? "b" : "q",
+					wpnName,
+					stats[STATS_KILLS],
+					stats[STATS_DEATHS],
+					stats[STATS_HITS],
+					stats[STATS_SHOTS],
+					stats[STATS_DAMAGE],
+					accuracy(stats)
+				)
+						
+				odd ^= true
+			}
+			
+			ArrayDestroy(wpn_stats_array)
+		}
+	#endif
 	
-	len += formatex(theBuffer[len],charsmax(theBuffer)-len,"</td>")
+	server_print("--> MOTD LEN: %d",len)
 	
 	show_motd(id,theBuffer,motd_title)
 	
 	return PLUGIN_HANDLED
 }
 
+#if defined CSSTATSX_SQL
+	public Sort_WeaponStats(Array:array, item1, item2)
+	{
+		new wpn_stats1[9],wpn_stats2[9]
+		ArrayGetArray(array,item1,wpn_stats1)
+		ArrayGetArray(array,item2,wpn_stats2)
+		
+		if(wpn_stats1[0] > wpn_stats2[0])
+		{
+			return -1
+		}
+		else if(wpn_stats1[0] < wpn_stats2[0])
+		{
+			return 1
+		}
+		
+		return 0
+	}
+#endif
+
 
 //
-// Личная статистка за карту
+// Р›РёС‡РЅР°СЏ СЃС‚Р°С‚РёСЃС‚РєР° Р·Р° РєР°СЂС‚Сѓ
 // 
-// id - кому показывать
-// stId - кого показывать
+// id - РєРѕРјСѓ РїРѕРєР°Р·С‹РІР°С‚СЊ
+// stId - РєРѕРіРѕ РїРѕРєР°Р·С‹РІР°С‚СЊ
 public StatsMeSay(id,player_id){
 	if(!SayStatsMe){
 		client_print_color(id,0,"%L %L",id,"STATS_TAG", id,"DISABLED_MSG")
@@ -620,8 +936,8 @@ public StatsMeSay(id,player_id){
 	return PLUGIN_HANDLED
 }
 
-// Формирование окна /top
-// В Pos указывается с какой позиции рисовать
+// Р¤РѕСЂРјРёСЂРѕРІР°РЅРёРµ РѕРєРЅР° /top
+// Р’ Pos СѓРєР°Р·С‹РІР°РµС‚СЃСЏ СЃ РєР°РєРѕР№ РїРѕР·РёС†РёРё СЂРёСЃРѕРІР°С‚СЊ
 public SayTop(id,Pos)
 {
 	if(!SayTop15){
@@ -655,10 +971,14 @@ enum _:stats_former_array
 	STATSF_DATA2[4],
 	STATSF_BH[8],
 	STATSF_RANK
+	
+	#if defined CSSTATSX_SQL
+	,STATSF_OT
+	#endif
 }
 
 //
-// Сбор статистики
+// РЎР±РѕСЂ СЃС‚Р°С‚РёСЃС‚РёРєРё
 //
 public SayTopHandler(id,Pos)
 {
@@ -682,6 +1002,8 @@ public SayTopHandler(id,Pos)
 	for(new i = size - MAX_TOP < 0 ? 0 : size - MAX_TOP; i < size ; i++){
 		#if defined CSSTATSX_SQL
 			rank = get_stats_sql(i,stats,bh,name,charsmax(name),authid,charsmax(authid))
+			get_stats2_sql(i,stats2)
+			get_stats_gametime(i,stats_info[STATSF_OT])
 		#else
 			rank = get_stats(i,stats,bh,name,charsmax(name),authid,charsmax(authid))
 			get_stats2(i,stats2)
@@ -714,7 +1036,7 @@ public SayTopHandler(id,Pos)
 		last_rank = rank
 		stats_info[STATSF_RANK] = rank
 		
-		// формируем статистику
+		// С„РѕСЂРјРёСЂСѓРµРј СЃС‚Р°С‚РёСЃС‚РёРєСѓ
 		ArrayPushArray(stats_array,stats_info)
 		
 		#if defined AES
@@ -729,7 +1051,7 @@ public SayTopHandler(id,Pos)
 	#if defined AES
 		stats_data[1] = _:authids_array
 		
-		if(!aes_find_stats_thread(id,authids_array,"SayTopFormer",stats_data,sizeof stats_data))
+		if(!ArraySize(authids_array) || !aes_find_stats_thread(id,authids_array,"SayTopFormer",stats_data,sizeof stats_data))
 		{
 			new Array:empty_aes_stats = ArrayCreate()
 			SayTopFormer(id,empty_aes_stats,stats_data)
@@ -771,12 +1093,12 @@ public SayTopFormer(id,Array:aes_stats_array,stats_data[])
 	new len,title[64]
 	formatex(title,charsmax(title),"%L",id,"HMTL_PLAYER_TOP")
 	
-	// заголовок
+	// Р·Р°РіРѕР»РѕРІРѕРє
 	len += formatex(theBuffer[len],BUFF_LEN - len,"%L",id,"HTML_META")
 	len += formatex(theBuffer[len],BUFF_LEN - len,"%L",id,"HTML_STYLE")
 	len += formatex(theBuffer[len],BUFF_LEN - len,"%L",id,"HTML_TOP_BODY",id,"HTML_PLAYER_TOP")
 	
-	// таблица со статистикой
+	// С‚Р°Р±Р»РёС†Р° СЃРѕ СЃС‚Р°С‚РёСЃС‚РёРєРѕР№
 	new stats_info[stats_former_array],row_str[512],cell_str[MAX_NAME_LENGTH * 3],row_len
 	new desc_str[10],desc_char[4],bool:odd
 	
@@ -802,12 +1124,12 @@ public SayTopFormer(id,Array:aes_stats_array,stats_data[])
 			desc_char[0] = desc_str[desc_index]
 			
 			switch(desc_char[0]){
-				// ранк
+				// СЂР°РЅРє
 				case '*':
 				{
 					formatex(cell_str,charsmax(cell_str),"%d",stats_info[STATSF_RANK])
 				}
-				// ник
+				// РЅРёРє
 				case 'a':
 				{
 					formatex(cell_str,charsmax(cell_str),"%s",stats_info[STATSF_NAME])
@@ -815,39 +1137,39 @@ public SayTopFormer(id,Array:aes_stats_array,stats_data[])
 					replace_all(cell_str,charsmax(cell_str),"<","&lt")
 					replace_all(cell_str,charsmax(cell_str),">","&gt")
 				}
-				// убийства
+				// СѓР±РёР№СЃС‚РІР°
 				case 'b':
 				{
 					formatex(cell_str,charsmax(cell_str),"%d",stats_info[STATSF_DATA][STATS_KILLS])
 				}
-				// смерти
+				// СЃРјРµСЂС‚Рё
 				case 'c':
 				{
 					formatex(cell_str,charsmax(cell_str),"%d",stats_info[STATSF_DATA][STATS_DEATHS])
 				}
-				// попадания
+				// РїРѕРїР°РґР°РЅРёСЏ
 				case 'd':
 				{
 					formatex(cell_str,charsmax(cell_str),"%d",stats_info[STATSF_DATA][STATS_HITS])
 				}
-				// выстрелы
+				// РІС‹СЃС‚СЂРµР»С‹
 				case 'e':
 				{
 					formatex(cell_str,charsmax(cell_str),"%d",stats_info[STATSF_DATA][STATS_SHOTS])
 				}
-				// хедшоты
+				// С…РµРґС€РѕС‚С‹
 				case 'f':
 				{
 					formatex(cell_str,charsmax(cell_str),"%d",stats_info[STATSF_DATA][STATS_HS])
 				}
-				// точнсть
+				// С‚РѕС‡РЅСЃС‚СЊ
 				case 'g':
 				{
 					formatex(cell_str,charsmax(cell_str),"%.2f%%",
 						accuracy(stats_info[STATSF_DATA])
 					)
 				}
-				// эффективность
+				// СЌС„С„РµРєС‚РёРІРЅРѕСЃС‚СЊ
 				case 'h':
 				{
 					formatex(cell_str,charsmax(cell_str),"%.2f%%",
@@ -855,15 +1177,15 @@ public SayTopFormer(id,Array:aes_stats_array,stats_data[])
 					)
 				}
 				
-				// скилл
+				// СЃРєРёР»Р»
 				case 'i':{
 					new Float:skill ,skill_id
 					
 					#if defined CSSTATSX_SQL
-						// используем скилл из csstatsx sql (ELO)
+						// РёСЃРїРѕР»СЊР·СѓРµРј СЃРєРёР»Р» РёР· csstatsx sql (ELO)
 						get_skill(stats_info[STATSF_RANK] - 1,skill)
 					#else
-						// используем K:D для скилла
+						// РёСЃРїРѕР»СЊР·СѓРµРј K:D РґР»СЏ СЃРєРёР»Р»Р°
 						skill = effec(stats_info[STATSF_DATA])
 					#endif
 					
@@ -883,7 +1205,7 @@ public SayTopFormer(id,Array:aes_stats_array,stats_data[])
 								skill
 							)
 						}
-						// буква (скилл)
+						// Р±СѓРєРІР° (СЃРєРёР»Р»)
 						case 1:
 						{
 							formatex(cell_str,charsmax(cell_str),"%s (%.2f)",
@@ -891,14 +1213,14 @@ public SayTopFormer(id,Array:aes_stats_array,stats_data[])
 								skill
 							)
 						}
-						// буква
+						// Р±СѓРєРІР°
 						case 2:
 						{
 							formatex(cell_str,charsmax(cell_str),"%s",
 								g_skill_letters[skill_id]
 							)
 						}
-						// скилл
+						// СЃРєРёР»Р»
 						case 3:
 						{
 							formatex(cell_str,charsmax(cell_str),"%.2f",
@@ -912,7 +1234,7 @@ public SayTopFormer(id,Array:aes_stats_array,stats_data[])
 					
 				}
 				#if defined AES
-				// опыт и ранг
+				// РѕРїС‹С‚ Рё СЂР°РЅРі
 				case 'j':
 				{
 					new aes_stats[aes_stats_struct]
@@ -920,16 +1242,16 @@ public SayTopFormer(id,Array:aes_stats_array,stats_data[])
 					if(aes_stats_size && aes_stats_size > aes_last_iter)
 						ArrayGetArray(aes_stats_array,aes_last_iter,aes_stats)
 					
-					// не нашли стату aes для этого игрока
+					// РЅРµ РЅР°С€Р»Рё СЃС‚Р°С‚Сѓ aes РґР»СЏ СЌС‚РѕРіРѕ РёРіСЂРѕРєР°
 					if((strcmp(aes_stats[AES_S_STEAMID],stats_info[STATSF_AUTHID]) != 0 &&
 						strcmp(aes_stats[AES_S_NAME],stats_info[STATSF_AUTHID]) != 0 &&
 						strcmp(aes_stats[AES_S_IP],stats_info[STATSF_AUTHID]) != 0)
 					)
 					{
-						// расчитываем на основе статы cstrike
+						// СЂР°СЃС‡РёС‚С‹РІР°РµРј РЅР° РѕСЃРЅРѕРІРµ СЃС‚Р°С‚С‹ cstrike
 						new stats[8],stats2[4]
 						
-						// кек
+						// РєРµРє
 						for(new i ; i < 8 ; i++)
 						{
 							stats[i] = stats_info[STATSF_DATA][i]
@@ -955,7 +1277,7 @@ public SayTopFormer(id,Array:aes_stats_array,stats_data[])
 								exp + 0.005
 							)
 						}
-						else // расчет по стате выключен
+						else // СЂР°СЃС‡РµС‚ РїРѕ СЃС‚Р°С‚Рµ РІС‹РєР»СЋС‡РµРЅ
 						{
 							formatex(cell_str,charsmax(cell_str),"-")
 						}
@@ -996,16 +1318,18 @@ public SayTopFormer(id,Array:aes_stats_array,stats_data[])
 						effec_hs(stats_info[STATSF_DATA])
 					)
 				}
-				// время в игре
 				#if defined CSSTATSX_SQL
+				// РІСЂРµРјСЏ РІ РёРіСЂРµ
 				case 'n':
 				{
+					new ot = stats_info[STATSF_OT]
+					func_format_ot(ot,cell_str,charsmax(cell_str),id)
 				}
 				#endif
 				default: continue
 			}
 			
-			// выводим отформатированные данные
+			// РІС‹РІРѕРґРёРј РѕС‚С„РѕСЂРјР°С‚РёСЂРѕРІР°РЅРЅС‹Рµ РґР°РЅРЅС‹Рµ
 			row_len += formatex(row_str[row_len],charsmax(row_str)-row_len,"%L",id,"HTML_BODY_CELL",cell_str)
 		}
 		
@@ -1073,7 +1397,7 @@ Float:hsk_ratio(stats[])
 }
 
 
-// Формируем заголовок таблицы для топа игроков
+// Р¤РѕСЂРјРёСЂСѓРµРј Р·Р°РіРѕР»РѕРІРѕРє С‚Р°Р±Р»РёС†С‹ РґР»СЏ С‚РѕРїР° РёРіСЂРѕРєРѕРІ
 parse_top_desc_header(id,buff[],maxlen,len,bool:isAstats,desc_str[]){
 	new tmp[256],len2,theChar[4],lCnt
 	
@@ -1140,7 +1464,7 @@ parse_top_desc_header(id,buff[],maxlen,len,bool:isAstats,desc_str[]){
 	return formatex(buff[len],maxlen-len,"%L",id,"HTML_TOP_HEADER_ROW",tmp)
 }
 
-// формирование меню для просмотра статистики игроков
+// С„РѕСЂРјРёСЂРѕРІР°РЅРёРµ РјРµРЅСЋ РґР»СЏ РїСЂРѕСЃРјРѕС‚СЂР° СЃС‚Р°С‚РёСЃС‚РёРєРё РёРіСЂРѕРєРѕРІ
 public ShowStatsMenu(id,page){
 	if(!SayStatsAll){
 		client_print_color(id,0,"%L %L",id,"STATS_TAG", id,"DISABLED_MSG")
@@ -1153,19 +1477,19 @@ public ShowStatsMenu(id,page){
 	
 	get_players(players,pCount)
 	
-	new maxPages = ((pCount - 1) / 7) + 1 // находим макс. кол-во страниц
+	new maxPages = ((pCount - 1) / 7) + 1 // РЅР°С…РѕРґРёРј РјР°РєСЃ. РєРѕР»-РІРѕ СЃС‚СЂР°РЅРёС†
 	
-	// отображаем с начала, если такой страницы не существует
+	// РѕС‚РѕР±СЂР°Р¶Р°РµРј СЃ РЅР°С‡Р°Р»Р°, РµСЃР»Рё С‚Р°РєРѕР№ СЃС‚СЂР°РЅРёС†С‹ РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚
 	if(page > maxPages)
 		page = 0
 
-	// начальный индекс игрока согласно странице
+	// РЅР°С‡Р°Р»СЊРЅС‹Р№ РёРЅРґРµРєСЃ РёРіСЂРѕРєР° СЃРѕРіР»Р°СЃРЅРѕ СЃС‚СЂР°РЅРёС†Рµ
 	new usrIndex = (7 * page)
 	
 	menuLen += formatex(menuText[menuLen],MENU_LEN - 1 - menuLen,"%L %L\R\y%d/%d^n",
 		id,"MENU_TAG",id,"MENU_TITLE",page + 1,maxPages)
 	
-	// добавляем игроков в меню
+	// РґРѕР±Р°РІР»СЏРµРј РёРіСЂРѕРєРѕРІ РІ РјРµРЅСЋ
 	while(usrIndex < pCount){
 		get_user_name(players[usrIndex],tName,31)
 		menuKeys |= (1 << usrIndex % 7)
@@ -1175,13 +1499,13 @@ public ShowStatsMenu(id,page){
 		
 		usrIndex ++
 		
-		// перываем заполнение
-		// если данная страница уже заполнена
+		// РїРµСЂС‹РІР°РµРј Р·Р°РїРѕР»РЅРµРЅРёРµ
+		// РµСЃР»Рё РґР°РЅРЅР°СЏ СЃС‚СЂР°РЅРёС†Р° СѓР¶Рµ Р·Р°РїРѕР»РЅРµРЅР°
 		if(!(usrIndex % 7))
 			break
 	}
 	
-	// вариант просмотра статистики
+	// РІР°СЂРёР°РЅС‚ РїСЂРѕСЃРјРѕС‚СЂР° СЃС‚Р°С‚РёСЃС‚РёРєРё
 	menuLen += formatex(menuText[menuLen],MENU_LEN - 1 - menuLen,"^n^n\r%d.\w %L",8,id,g_MenuStatus[id][0] ? "MENU_RANK" : "MENU_STATS")
 	menuKeys |= MENU_KEY_8
 	
