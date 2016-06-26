@@ -5,7 +5,6 @@
 
 #include <amxmodx>
 #include <csx>
-#include <csstats>
 
 #if AMXX_VERSION_NUM < 183
 	#include <colorchat>
@@ -130,11 +129,9 @@ public SayHot	= 0	// displays top from current players
 public SaySeStats	= 0 // displays players match history
 #endif
 
-public plugin_init(){
+public plugin_precache()
+{
 	register_plugin(PLUGIN, VERSION, AUTHOR)
-	
-	register_clcmd("say","Say_Catch")
-	register_clcmd("say_team","Say_Catch")
 	
 	/*
 	// Отображение /top15 и /rank
@@ -186,11 +183,21 @@ public plugin_init(){
 	#if defined CSSTATSX_SQL
 		register_dictionary("time.txt")
 	#endif
+}
+
+public plugin_init()
+{
+	register_clcmd("say","Say_Catch")
+	register_clcmd("say_team","Say_Catch")
 	
 	register_menucmd(register_menuid("Stats Menu"), 1023, "actionStatsMenu")
 }
 
-public plugin_cfg()
+#if AMXX_VERSION_NUM < 183
+	public plugin_cfg()
+#else
+	public OnConfigsExecuted()
+#endif
 {
 	new levelString[512],stPos,ePos,rawPoint[20],cnt
 	get_pcvar_string(cvar[CVAR_SKILL],levelString,charsmax(levelString))
@@ -226,78 +233,6 @@ public plugin_cfg()
 }
 
 #if defined CSSTATSX_SQL
-enum _:player_csxsql_struct
-{
-	CSXSQL_SESTATS:CSXSQL_PLAYER_SESTATS,
-	Float:CSXSQL_INITAL_SKILL
-}
-
-new player_csxsql[MAX_PLAYERS + 1][player_csxsql_struct]
-
-public client_putinserver(id)
-{
-	SeStats_Load(id)
-}
-
-//
-// Загружаем статистику по картам
-//
-public SeStats_Load(id)
-{
-	if(!is_user_connected(id))
-	{
-		return PLUGIN_CONTINUE
-	}
-	
-	new player_id = get_user_stats_id(id)
-	
-	// статистика игрока еще не загрузилась в CSstatsX SQL, пробуем еще раз через секунду
-	if(!player_id)
-	{
-		set_task(1.0,"SeStats_Load",id)
-		return PLUGIN_CONTINUE
-	}
-	
-	new sestats_data[1]
-	sestats_data[0] = id
-	
-	// пробуем загрузить статистику по картам
-	if(!get_sestats_thread_sql(player_id,"SeStats_LoadCompleted",sestats_data,sizeof sestats_data,10))
-	{
-		// статистика по картам выключена, просто запоминаем начальный скилл
-		get_user_skill(id,player_csxsql[id][CSXSQL_INITAL_SKILL])
-	}
-	
-	return PLUGIN_CONTINUE
-}
-
-public SeStats_LoadCompleted(CSXSQL_SESTATS:sestats_array,data[],dataSize)
-{
-	new id = data[0]
-	
-	if(!is_user_connected(id))
-	{
-		get_sestats_free(sestats_array)
-		
-		return PLUGIN_CONTINUE
-	}
-	
-	player_csxsql[id][CSXSQL_PLAYER_SESTATS] = _:sestats_array
-	get_user_skill(id,player_csxsql[id][CSXSQL_INITAL_SKILL])
-	
-	return PLUGIN_CONTINUE
-}
-
-public client_disconnected(id)
-{
-	if(player_csxsql[id][CSXSQL_PLAYER_SESTATS])
-	{
-		get_sestats_free(player_csxsql[id][CSXSQL_PLAYER_SESTATS])
-	}
-	
-	arrayset(player_csxsql[id],0,player_csxsql_struct)
-}
-
 //
 // Команда /sestats
 //
@@ -310,14 +245,33 @@ public SeStats_Show(id,player_id)
 		return PLUGIN_HANDLED
 	}
 	
-	if(!player_csxsql[player_id][CSXSQL_PLAYER_SESTATS])
+	new plr_db,sestats_data[2]
+	
+	sestats_data[0] = id
+	sestats_data[1] = player_id
+	
+	if(!(plr_db = get_user_stats_id(player_id)) || !get_sestats_thread_sql(plr_db,"SeStats_ShowHandler",sestats_data,sizeof sestats_data,10))
 	{
 		client_print_color(id,print_team_red,"%L %L",id,"STATS_TAG", id,"AES_STATS_INFO2")
 		
 		return PLUGIN_HANDLED
 	}
 	
-	new len,title[64],CSXSQL_SESTATS:sestats_array = player_csxsql[player_id][CSXSQL_PLAYER_SESTATS]
+	return PLUGIN_HANDLED
+}
+
+public SeStats_ShowHandler(CSXSQL_SESTATS:sestats_array,sestats_data[])
+{
+	new id = sestats_data[0]
+	new player_id = sestats_data[1]
+	
+	if(!is_user_connected(id) || !is_user_connected(player_id))
+	{
+		get_sestats_free(sestats_array)
+		return PLUGIN_HANDLED
+	}
+	
+	new len,title[64]
 	
 	// заголовок
 	len += formatex(theBuffer[len],BUFF_LEN - len,"%L",id,"AES_META")
@@ -357,7 +311,7 @@ public SeStats_Show(id,player_id)
 	
 	new stats[8],bh[8]
 	
-	for(new i,length = get_sestats_read_count(player_csxsql[id][CSXSQL_PLAYER_SESTATS]) ; i < length ; i++)
+	for(new i,length = get_sestats_read_count(sestats_array) ; i < length ; i++)
 	{
 		get_sestats_read_stats(sestats_array,i,stats,bh)
 		
@@ -477,8 +431,9 @@ public SeStats_Show(id,player_id)
 		odd ^= true
 	}
 	
-	formatex(title,charsmax(title),"%L",id,"CSXSQL_SETITLE")
+	get_sestats_free(sestats_array)
 	
+	formatex(title,charsmax(title),"%L",id,"CSXSQL_SETITLE")
 	show_motd(id,theBuffer,title)
 	
 	return PLUGIN_HANDLED
@@ -1259,7 +1214,7 @@ public RankStatsSay(id,player_id){
 			new bool:odd
 			new wpn_stats[9],Array:wpn_stats_array = ArrayCreate(sizeof wpn_stats)
 				
-			for (new wpnId = 1 ; wpnId < xmod_get_maxweapons() && charsmax(theBuffer)-len > 0 ; wpnId++)
+			for (new wpnId = 1,max_w = xmod_get_maxweapons() ; wpnId < max_w ; wpnId++)
 			{
 				if (get_user_wstats_sql(player_id, wpnId, stats,bh))
 				{
@@ -1277,6 +1232,7 @@ public RankStatsSay(id,player_id){
 				}
 			}
 			
+			// сортируем по кол-ву убийств
 			ArraySort(wpn_stats_array,"Sort_WeaponStats")
 			
 			for(new lena,i,wpnId,wpnName[MAX_NAME_LENGTH],length = ArraySize(wpn_stats_array) ; i < length && charsmax(theBuffer)-len > 0; i++)
