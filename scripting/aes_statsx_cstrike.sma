@@ -250,7 +250,9 @@ public SeStats_Show(id,player_id)
 	sestats_data[0] = id
 	sestats_data[1] = player_id
 	
-	if(!(plr_db = get_user_stats_id(player_id)) || !get_sestats_thread_sql(plr_db,"SeStats_ShowHandler",sestats_data,sizeof sestats_data,10))
+	plr_db = get_user_stats_id(player_id)
+	
+	if(!plr_db|| !get_sestats_thread_sql(plr_db,"SeStats_ShowHandler",sestats_data,sizeof sestats_data,10))
 	{
 		client_print_color(id,print_team_red,"%L %L",id,"STATS_TAG", id,"AES_STATS_INFO2")
 		
@@ -1214,7 +1216,7 @@ public RankStatsSay(id,player_id){
 			new bool:odd
 			new wpn_stats[9],Array:wpn_stats_array = ArrayCreate(sizeof wpn_stats)
 				
-			for (new wpnId = 1,max_w = xmod_get_maxweapons() ; wpnId < max_w ; wpnId++)
+			for (new wpnId = 1,max_w = xmod_get_maxweapons_sql() ; wpnId < max_w ; wpnId++)
 			{
 				if (get_user_wstats_sql(player_id, wpnId, stats,bh))
 				{
