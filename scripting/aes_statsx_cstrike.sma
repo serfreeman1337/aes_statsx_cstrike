@@ -1518,7 +1518,7 @@ aes_statsx_get_skill_id(Float:skill)
 		}
 	}
 	
-	return 0
+	return (sizeof g_skill_opt - 1)
 }
 
 #if !defined AES
