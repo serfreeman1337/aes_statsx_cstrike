@@ -196,7 +196,7 @@ public plugin_init()
 #if AMXX_VERSION_NUM < 183
 	public plugin_cfg()
 #else
-	public OnConfigsExecuted()
+	public OnAutoConfigsBuffered()
 #endif
 {
 	new levelString[512],stPos,ePos,rawPoint[20],cnt

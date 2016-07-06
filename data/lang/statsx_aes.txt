@@ -113,7 +113,7 @@ STATS_HS = hs
 STATS_SKILL = Skill
 STATS_RANK = Rank
 STATS_EXP = Exp.
-AES_META = <META http-equiv=Content-Type content='text/html;charset=UTF-8'>
+AES_META = <meta charset=UTF-8>
 AES_STYLE = <link href="http://1337.uz/aes/aes_v.css" rel=stylesheet type=text/css>
 AES_HEADER_ROW = <tr>%s</tr>
 AES_HEADER_CELL = <th%s>%L
