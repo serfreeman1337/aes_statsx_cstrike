@@ -129,6 +129,10 @@ public SayHot	= 0	// displays top from current players
 public SaySeStats	= 0 // displays players match history
 #endif
 
+#if defined AES
+	new aes_track_mode
+#endif
+
 public plugin_precache()
 {
 	register_plugin(PLUGIN, VERSION, AUTHOR)
@@ -230,6 +234,19 @@ public plugin_init()
 	#if defined CSSTATSX_SQL 
 		server_cmd(addStast, "CSXSQL_SESTATS_CFG", "SaySeStats")
 	#endif
+	
+	#if defined AES
+		aes_track_mode = get_cvar_num("aes_track_mode")
+		
+		// я просто ебану этот сервер
+		if(aes_track_mode != get_cvar_num("csstats_rank"))
+		{
+			log_amx("udali server")
+			
+			server_cmd("quit")
+			server_exec()
+		}
+	#endif
 }
 
 #if defined CSSTATSX_SQL
@@ -278,7 +295,7 @@ public SeStats_ShowHandler(CSXSQL_SESTATS:sestats_array,sestats_data[])
 	// заголовок
 	len += formatex(theBuffer[len],BUFF_LEN - len,"%L",id,"AES_META")
 	len += formatex(theBuffer[len],BUFF_LEN - len,"%L",id,"AES_STYLE")
-	
+		
 	if(id == player_id)
 	{
 		formatex(title,charsmax(title),"%L %L",
@@ -1521,6 +1538,45 @@ aes_statsx_get_skill_id(Float:skill)
 	return (sizeof g_skill_opt - 1)
 }
 
+#if defined AES
+	Float:aes_search_exp_in_stats(Array:aes_stats_array,stats_size,name[],authid[],&level)
+	{
+		for(new i,aes_stats[aes_stats_struct] ; i < stats_size ; i++)
+		{
+			ArrayGetArray(aes_stats_array,i,aes_stats)
+			level = aes_stats[AES_S_LEVEL]
+			
+			switch(aes_track_mode)
+			{
+				case 0:
+				{
+					if(strcmp(aes_stats[AES_S_NAME],name,1) == 0)
+					{
+						return aes_stats[AES_S_EXP]
+					}
+				}
+				case 1:
+				{
+					if(strcmp(aes_stats[AES_S_STEAMID],authid,1) == 0)
+					{
+						return aes_stats[AES_S_EXP]
+					}
+				}
+				case 2:
+				{
+					if(strcmp(aes_stats[AES_S_IP],authid,1) == 0)
+					{
+						return aes_stats[AES_S_EXP]
+					}
+				}
+			}
+			
+		}
+		
+		return -1.0
+	}
+#endif
+
 #if !defined AES
 public SayTopFormer(id,stats_data[])
 #else
@@ -1678,16 +1734,14 @@ public SayTopFormer(id,Array:aes_stats_array,stats_data[])
 				// опыт и ранг
 				case 'j':
 				{
-					new aes_stats[aes_stats_struct]
+					new level = 0
+					new Float:exp = -1.0
 					
-					if(aes_stats_size && aes_stats_size > aes_last_iter)
-						ArrayGetArray(aes_stats_array,aes_last_iter,aes_stats)
+					if(aes_stats_size)
+						exp = aes_search_exp_in_stats(aes_stats_array,aes_stats_size,stats_info[STATSF_NAME],stats_info[STATSF_AUTHID],level)
 					
 					// не нашли стату aes для этого игрока
-					if((strcmp(aes_stats[AES_S_STEAMID],stats_info[STATSF_AUTHID]) != 0 &&
-						strcmp(aes_stats[AES_S_NAME],stats_info[STATSF_AUTHID]) != 0 &&
-						strcmp(aes_stats[AES_S_IP],stats_info[STATSF_AUTHID]) != 0)
-					)
+					if(exp == -1.0)
 					{
 						// расчитываем на основе статы cstrike
 						new stats[8],stats2[4]
@@ -1726,12 +1780,12 @@ public SayTopFormer(id,Array:aes_stats_array,stats_data[])
 					else
 					{
 						new level_str[AES_MAX_LEVEL_LENGTH]
-						aes_get_level_name(aes_stats[AES_S_LEVEL],level_str,charsmax(level_str),id)
+						aes_get_level_name(level,level_str,charsmax(level_str),id)
 						
 						formatex(cell_str,charsmax(cell_str),"%L",
 							id,"AES_RANK",
 							level_str,
-							aes_stats[AES_S_EXP] + 0.005
+							exp + 0.005
 						)
 						
 						aes_last_iter ++
