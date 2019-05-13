@@ -1,6 +1,6 @@
 /*
-*	AES: StatsX			     v. 0.5
-*	by serfreeman1337	    http://1337.uz/
+*	AES: StatsX						v. 0.5.1
+*	by serfreeman1337		https://github.com/serfreeman1337
 */
 
 #include <amxmodx>
@@ -20,8 +20,8 @@
 	#define client_disconnected client_disconnect
 #endif
 
-//#define AES			// расскомментируйте для поддержки AES (http://1337.uz/advanced-experience-system/)
-//#define CSSTATSX_SQL		// расскомментируйте для поддержки CSstatsX SQL (http://1337.uz/csstatsx-sql/)
+//#define AES			// расскомментируйте для поддержки AES (https://github.com/serfreeman1337/aes)
+//#define CSSTATSX_SQL		// расскомментируйте для поддержки CSstatsX SQL (https://github.com/serfreeman1337/csstatsx-sql)
 
 #if defined AES
 	#include <aes_v>
@@ -35,7 +35,7 @@
 #endif
 
 #define PLUGIN "AES: StatsX"
-#define VERSION "0.5 Vega"
+#define VERSION "0.5.1"
 #define AUTHOR "serfreeman1337"
 
 /* - CVARS - */
@@ -117,7 +117,10 @@ new theBuffer[BUFF_LEN + 1] = 0
 
 #define MENU_LEN 512
 
-new g_MenuStatus[MAX_PLAYERS + 1][2]
+#define STATS_MENU_ACTION	0
+#define STATS_MENU_PAGE		1
+#define STATS_MENU_PERPAGE	7
+new g_MenuStatus[MAX_PLAYERS + 1][STATS_MENU_PERPAGE + 2]
 
 public SayStatsMe           = 0 // displays user's stats and rank
 public SayRankStats         = 0 // displays user's rank stats
@@ -720,11 +723,11 @@ public Say_Catch(id){
 	remove_quotes(msg)
 
 	if(msg[0] == '/'){
-		if(strcmp(msg[1],"rank",1) == 0)
+		if(strcmp(msg[1],"rank",true) == 0)
 		{
 			return RankSay(id)
 		}
-		if(strcmp(msg[1],"hot",1) == 0 || strcmp(msg[1],"topnow",1) == 0)
+		if(strcmp(msg[1],"hot",true) == 0 || strcmp(msg[1],"topnow",true) == 0)
 		{
 			return ShowCurrentTop(id)
 		}
@@ -734,23 +737,23 @@ public Say_Catch(id){
 			
 			return SayTop(id,str_to_num(msg))
 		}
-		if(strcmp(msg[1],"rankstats",1) == 0)
+		if(strcmp(msg[1],"rankstats",true) == 0)
 		{
 			return RankStatsSay(id,id)
 		}
 		
-		if(strcmp(msg[1],"statsme",1) == 0)
+		if(strcmp(msg[1],"statsme",true) == 0)
 		{
 			return StatsMeSay(id,id)
 		}
 		
-		if(strcmp(msg[1],"stats",1) == 0)
+		if(strcmp(msg[1],"stats",true) == 0)
 		{
-			arrayset(g_MenuStatus[id],0,2)
+			arrayset(g_MenuStatus[id], 0, sizeof g_MenuStatus[])
 			return ShowStatsMenu(id,0)
 		}
 		#if defined CSSTATSX_SQL
-		if(strcmp(msg[1],"sestats",1) == 0 || strcmp(msg[1],"history",1) == 0)
+		if(strcmp(msg[1],"sestats",true) == 0 || strcmp(msg[1],"history",true) == 0)
 		{
 			return SeStats_Show(id,id)
 		}
@@ -1971,39 +1974,41 @@ public ShowStatsMenu(id,page){
 	new menuKeys,menuText[512],menuLen
 	new tName[42],players[32],pCount
 	
-	get_players(players,pCount)
+	get_players(players, pCount)
 	
-	new maxPages = ((pCount - 1) / 7) + 1 // находим макс. кол-во страниц
+	new maxPages = ((pCount - 1) / STATS_MENU_PERPAGE) + 1 // находим макс. кол-во страниц
 	
 	// отображаем с начала, если такой страницы не существует
 	if(page > maxPages)
 		page = 0
 
 	// начальный индекс игрока согласно странице
-	new usrIndex = (7 * page)
+	new usrIndex = (STATS_MENU_PERPAGE * page)
 	
 	menuLen += formatex(menuText[menuLen],MENU_LEN - 1 - menuLen,"%L %L\R\y%d/%d^n",
 		id,"MENU_TAG",id,"MENU_TITLE",page + 1,maxPages)
 	
 	// добавляем игроков в меню
 	while(usrIndex < pCount){
-		get_user_name(players[usrIndex],tName,31)
-		menuKeys |= (1 << usrIndex % 7)
+		get_user_name(players[usrIndex],tName, charsmax(tName))
+		menuKeys |= (1 << usrIndex % STATS_MENU_PERPAGE)
 		
 		menuLen += formatex(menuText[menuLen],MENU_LEN - 1 - menuLen,"^n\r%d.\w %s",
-			(usrIndex % 7) + 1,tName)
+			(usrIndex % STATS_MENU_PERPAGE) + 1,tName)
+			
+		g_MenuStatus[id][(usrIndex % STATS_MENU_PERPAGE) + 2] = players[usrIndex]
 		
 		usrIndex ++
 		
 		// перываем заполнение
 		// если данная страница уже заполнена
-		if(!(usrIndex % 7))
+		if(!(usrIndex % STATS_MENU_PERPAGE))
 			break
 	}
 	
 	// вариант просмотра статистики
 	
-	switch(g_MenuStatus[id][0])
+	switch(g_MenuStatus[id][STATS_MENU_ACTION])
 	{
 		case 0:menuLen += formatex(menuText[menuLen],MENU_LEN - 1 - menuLen,"^n^n\r%d.\w %L",8,id,"MENU_RANK")
 		case 1: menuLen += formatex(menuText[menuLen],MENU_LEN - 1 - menuLen,"^n^n\r%d.\w %L",8,id,"MENU_STATS")
@@ -2015,12 +2020,12 @@ public ShowStatsMenu(id,page){
 	
 	menuKeys |= MENU_KEY_8
 	
-	if(!(usrIndex % 7)){
+	if(!(usrIndex % STATS_MENU_PERPAGE)){
 		menuLen += formatex(menuText[menuLen],MENU_LEN - 1 - menuLen,"^n^n\r%d.\w %L",9,id,"MORE")
 		menuKeys |= MENU_KEY_9
 	}
 	
-	if((7 * page)){
+	if((STATS_MENU_PERPAGE * page)){
 		menuLen += formatex(menuText[menuLen],MENU_LEN - 1 - menuLen,"^n^n\r%d.\w %L",0,id,"BACK")
 		menuKeys |= MENU_KEY_0
 	}else{
@@ -2036,46 +2041,46 @@ public ShowStatsMenu(id,page){
 
 public actionStatsMenu(id,key){
 	switch(key){
-		case 0..6:{
-			new usrIndex = key + (7 * g_MenuStatus[id][1]) + 1
+		case 0..(STATS_MENU_PERPAGE - 1):{
+			new selected_player = g_MenuStatus[id][key + 2]
 			
-			if(!is_user_connected(id)){
-				ShowStatsMenu(id,g_MenuStatus[id][1])
+			if(!is_user_connected(selected_player)){
+				ShowStatsMenu(id,g_MenuStatus[id][STATS_MENU_PAGE])
 				
 				return PLUGIN_HANDLED
 			}
 			
-			switch(g_MenuStatus[id][0])
+			switch(g_MenuStatus[id][STATS_MENU_ACTION])
 			{
-				case 0: RankStatsSay(id,usrIndex)
-				case 1: StatsMeSay(id,usrIndex)
+				case 0: RankStatsSay(id,selected_player)
+				case 1: StatsMeSay(id,selected_player)
 				#if defined CSSTATSX_SQL
-				case 2: SeStats_Show(id,usrIndex)
+				case 2: SeStats_Show(id,selected_player)
 				#endif
 			}
 			
-			ShowStatsMenu(id,g_MenuStatus[id][1])
+			ShowStatsMenu(id,g_MenuStatus[id][STATS_MENU_PAGE])
 		}
 		case 7:{
-			g_MenuStatus[id][0] ++
+			g_MenuStatus[id][STATS_MENU_ACTION] ++
 			#if defined CSSTATSX_SQL
-			if(g_MenuStatus[id][0] > 2)
-				g_MenuStatus[id][0] = 0
+			if(g_MenuStatus[id][STATS_MENU_ACTION] > 2)
+				g_MenuStatus[id][STATS_MENU_ACTION] = 0
 			#else
-			if(g_MenuStatus[id][0] > 1)
-				g_MenuStatus[id][0] = 0
+			if(g_MenuStatus[id][STATS_MENU_ACTION] > 1)
+				g_MenuStatus[id][STATS_MENU_ACTION] = 0
 			#endif
 			
-			ShowStatsMenu(id,g_MenuStatus[id][1])
+			ShowStatsMenu(id,g_MenuStatus[id][STATS_MENU_PAGE])
 		}
 		case 8:{
-			g_MenuStatus[id][1] ++
-			ShowStatsMenu(id,g_MenuStatus[id][1])
+			g_MenuStatus[id][STATS_MENU_PAGE] ++
+			ShowStatsMenu(id,g_MenuStatus[id][STATS_MENU_PAGE])
 		}
 		case 9:{
-			if(g_MenuStatus[id][1]){
+			if(g_MenuStatus[id][STATS_MENU_PAGE]){
 				g_MenuStatus[id][1] --
-				ShowStatsMenu(id,g_MenuStatus[id][1])
+				ShowStatsMenu(id,g_MenuStatus[id][STATS_MENU_PAGE])
 			}
 		}
 	}

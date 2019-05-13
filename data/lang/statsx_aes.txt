@@ -13,7 +13,7 @@ STATS_SKILL = Скилл
 STATS_RANK = Звание
 STATS_EXP = Опыт
 AES_META = <meta charset=UTF-8>
-AES_STYLE = <link href="http://1337.uz/aes/aes_v.css" rel=stylesheet type=text/css>
+AES_STYLE = <link href="https://s008nyx.github.io/aes_v.css" rel=stylesheet type=text/css>
 AES_HEADER_ROW = <tr>%s</tr>
 AES_HEADER_CELL = <th%s>%L
 AES_BODY_ROW = <tr%s>%s</tr>
@@ -114,7 +114,7 @@ STATS_SKILL = Skill
 STATS_RANK = Rank
 STATS_EXP = Exp.
 AES_META = <meta charset=UTF-8>
-AES_STYLE = <link href="http://1337.uz/aes/aes_v.css" rel=stylesheet type=text/css>
+AES_STYLE = <link href="https://s008nyx.github.io/aes_v.css" rel=stylesheet type=text/css>
 AES_HEADER_ROW = <tr>%s</tr>
 AES_HEADER_CELL = <th%s>%L
 AES_BODY_ROW = <tr%s>%s</tr>
