@@ -854,7 +854,7 @@ parse_rank_desc(id,msg[],maxlen,stats[8]){
 			// эффективность
 			case 'h':
 			{ 
-				len += formatex(msg[len],maxlen - len,"%L ^3%d%%^1",id,"EFF",effec(stats))
+				len += formatex(msg[len],maxlen - len,"%L ^3%.2f%%^1",id,"EFF",effec(stats))
 			}
 			// скилл
 			case 'i':
