@@ -1,5 +1,5 @@
 /*
-*	AES: StatsX						v. 0.5.1
+*	AES: StatsX						v. 0.5+1
 *	by serfreeman1337		https://github.com/serfreeman1337
 */
 
@@ -35,7 +35,7 @@
 #endif
 
 #define PLUGIN "AES: StatsX"
-#define VERSION "0.5.1"
+#define VERSION "0.5+1"
 #define AUTHOR "serfreeman1337"
 
 /* - CVARS - */
